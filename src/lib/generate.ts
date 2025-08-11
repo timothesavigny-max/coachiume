@@ -21,22 +21,43 @@ export function computeMacros(calories:number, onb: Onboarding){
 }
 
 export function generateProgramme(onb: Onboarding): Programme {
-  const jours = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  const sessionsParSem = Math.min(6, Math.max(2, onb.joursParSemaine||3));
-  const typeBase = onb.objectif==='endurance' ? ['Endurance','Fractionné','Renfo','Endurance','Renfo'] :
-                   onb.objectif==='prise' ? ['Full body','Push','Pull','Legs','Core'] :
-                   ['Renfo','Cardio','Full body','Mobility','HIIT'];
+  const jours = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'] as const;
+  const sessionsParSem = Math.min(6, Math.max(2, onb.joursParSemaine || 3));
+
+  const typeBase = onb.objectif === 'endurance'
+    ? ['Endurance','Fractionné','Renfo','Endurance','Renfo']
+    : onb.objectif === 'prise'
+    ? ['Full body','Push','Pull','Legs','Core']
+    : ['Renfo','Cardio','Full body','Mobility','HIIT'];
+
   const semaines = 4;
   const plan: Programme = [];
-  for(let s=1;s<=semaines;s++){
-    const sessions = [];
-    for(let i=0;i<sessionsParSem;i++){
+
+  for (let s = 1; s <= semaines; s++) {
+    const sessions: Programme[number]['sessions'] = [];
+
+    for (let i = 0; i < sessionsParSem; i++) {
       const jour = jours[(i + s) % 7];
+
+      // 👇 Force le type littéral attendu par TS
+      const intensite = (
+        i % 3 === 0 ? 'elevee' : i % 2 === 0 ? 'moderee' : 'faible'
+      ) as 'faible' | 'moderee' | 'elevee';
+
       const t = typeBase[i % typeBase.length];
-      sessions.push({ jour, titre: t, dureeMin: 45, intensite: i%3===0?'elevee':i%2===0?'moderee':'faible', details: detailsFor(t,onb) });
+
+      sessions.push({
+        jour,
+        titre: t,
+        dureeMin: 45,
+        intensite, // ✅ a bien le type union
+        details: detailsFor(t, onb),
+      });
     }
+
     plan.push({ semaine: s, sessions });
   }
+
   return plan;
 }
 
